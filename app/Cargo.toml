@@ -1,0 +1,11 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.15"
+crossbeam = "0.8.4"
+rand = "0.8"
+strum = "0.26"
+strum_macros = "0.26"
