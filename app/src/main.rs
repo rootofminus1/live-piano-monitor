@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy::log::LogPlugin;
 use bevy::log::info;
 
+mod audio;
+mod testing;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, strum_macros::Display)]
@@ -305,7 +307,7 @@ struct PitchState {
 
 #[derive(Resource)]
 struct PitchReceiver {
-    rx: crossbeam::channel::Receiver<f32>,
+    rx: crossbeam::channel::Receiver<Option<f32>>,
 }
 
 fn audio_loop(tx: crossbeam::channel::Sender<f32>) {
@@ -318,10 +320,16 @@ fn audio_loop(tx: crossbeam::channel::Sender<f32>) {
 }
 
 fn poll_pitch(mut pitch: ResMut<PitchState>, recv: Res<PitchReceiver>) {
-    while let Ok(freq) = recv.rx.try_recv() {
-        pitch.current_hz = Some(freq);
+    while let Ok(freq_option) = recv.rx.try_recv() {
+        pitch.current_hz = freq_option; // Some(f32) or None
+        if let Some(freq) = freq_option {
+            println!("[Bevy] freq: {:.2} Hz", freq);
+        } else {
+            println!("[Bevy] freq: None");
+        }
     }
 }
+
 
 
 fn freq_to_note(freq: f32) -> Option<(Note, i32)> {
@@ -339,28 +347,41 @@ fn freq_to_note(freq: f32) -> Option<(Note, i32)> {
 }
 
 
+
 fn highlight_keys(
     pitch: Res<PitchState>,
     mut keys: Query<(&PianoKeyPitch, &mut Sprite)>
 ) {
-    let Some(freq) = pitch.current_hz else { return };
-    let Some((note, octave)) = freq_to_note(freq) else { return };
+    let maybe_note = pitch.current_hz.and_then(freq_to_note);
 
     for (key, mut sprite) in &mut keys {
-        if key.note == note && key.octave == octave {
-            sprite.color = Color::rgb(1., 0., 0.);
-        } else if key.note.is_white() {
+        // RESET so that it stops
+        // TODO: manage colors better
+        if key.note.is_white() {
             sprite.color = Color::rgb(0.95, 0.95, 0.95);
         } else {
             sprite.color = Color::BLACK;
         }
+
+        // then highlight
+        if let Some((note, octave)) = maybe_note {
+            if key.note == note && key.octave == octave {
+                sprite.color = Color::rgb(1.0, 0.0, 0.0);
+            }
+        }
     }
 }
+
+
+use audio::start_audio_input;
 
 fn start_audio(mut commands: Commands) {
     let (tx, rx) = crossbeam::channel::bounded(128);
 
-    std::thread::spawn(move || { audio_loop(tx); });
+    // std::thread::spawn(move || { audio_loop(tx); });
+
+    std::thread::spawn(move || { start_audio_input(tx); });
+
 
     commands.insert_resource(PitchReceiver { rx });
     commands.insert_resource(PitchState::default());
