@@ -1,7 +1,7 @@
 import sounddevice as sd
 import numpy as np
 
-DEVICE_ID = 2
+DEVICE_ID = 15
 
 def callback(indata, frames, time, status):
     volume_norm = np.linalg.norm(indata) * 10

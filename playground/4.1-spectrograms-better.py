@@ -3,9 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import librosa
+import matplotlib
+matplotlib.use("TkAgg")
 
-DEVICE_ID = 2
-samplerate = 44100
+DEVICE_ID = 15
+
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+RATE = int(dev["default_samplerate"])
+samplerate = RATE # 44100
 blocksize = 2048
 
 spectrum_buffer = np.zeros(blocksize // 2 + 1)

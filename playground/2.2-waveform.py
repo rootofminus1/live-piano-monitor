@@ -2,10 +2,20 @@ import sounddevice as sd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import sounddevice as sd
+import matplotlib
+matplotlib.use("TkAgg")
 
-DEVICE_ID = 1
+print(matplotlib.get_backend())
 
-RATE = 44100  # CD quality standard, also to capture up to 20k we should use 2x that, so around 40k
+DEVICE_ID = 15
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+RATE = int(dev["default_samplerate"])
+
+
+
+# RATE = 44100  # CD quality standard, also to capture up to 20k we should use 2x that, so around 40k
 CHUNK = 1024  # powers of 2 are fast for FFT 
 # higher CHUNK (2048, 4096) = more latency, more frequency detail
 # lower CHUNK (256, 512) = less latency, less frequency detail 
