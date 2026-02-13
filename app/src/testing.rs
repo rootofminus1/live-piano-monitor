@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::core::*;
 
     #[test]
     fn test_generate_keys() {
