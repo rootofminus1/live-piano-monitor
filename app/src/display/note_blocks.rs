@@ -1,38 +1,29 @@
 use bevy::prelude::*;
-use crate::alg::PolyphonicState;
-use crate::core::{Note, Pitch};
-use crate::display::{KeyPitch, PianoLayout};
-use crate::ui::UiSettings;
+use crate::{alg::DetectedPitches, core::{Note, Pitch}, display::{KeyPitch, PianoLayout}, ui::UiSettings};
 
 #[derive(Component)]
 pub struct NoteBlock {
     pub note: Note,
     pub octave: i32,
-    pub velocity: f32
+    pub velocity: f32,
 }
 
-
 pub fn spawn_note_block(
-    detected: Res<PolyphonicState>,
+    detected: Res<DetectedPitches>,
     layout: Res<PianoLayout>,
     keys: Query<(&KeyPitch, &Transform, &Sprite)>,
     mut commands: Commands,
 ) {
-    for pitch in &detected.notes {
-        let Pitch { note, octave } = pitch;
-
+    for Pitch { note, octave } in &detected.notes {
         let Some((_, transform, sprite)) = keys
             .iter()
             .find(|(k, _, _)| k.note == *note && k.octave == *octave)
-        else { continue };
+        else {
+            continue;
+        };
 
         let key_x = transform.translation.x;
-
-        let key_width = sprite
-            .custom_size
-            .map(|v| v.x)
-            .unwrap_or(layout.white_key_width);
-
+        let key_width = sprite.custom_size.map(|v| v.x).unwrap_or(layout.white_key_width);
         let note_height = 20.0;
         let start_y = layout.bottom_y + layout.white_key_height;
 
@@ -43,35 +34,27 @@ pub fn spawn_note_block(
                 ..default()
             },
             Transform::from_xyz(key_x, start_y, 0.5),
-            NoteBlock {
-                note: *note,
-                octave: *octave,
-                velocity: 1.0
-            }
+            NoteBlock { note: *note, octave: *octave, velocity: 1.0 },
         ));
     }
 }
 
-
 pub fn move_note_blocks(
     time: Res<Time>,
     settings: Res<UiSettings>,
-    mut query: Query<&mut Transform, With<NoteBlock>>
+    mut query: Query<&mut Transform, With<NoteBlock>>,
 ) {
     for mut transform in &mut query {
         transform.translation.y += settings.note_speed * time.delta_secs();
     }
 }
 
-
 pub fn despawn_offscreen_notes(
     windows: Query<&Window>,
     mut commands: Commands,
     query: Query<(Entity, &Transform), With<NoteBlock>>,
 ) {
-    // TODO: handle err case
     let window = windows.single().expect("expected window");
-
     for (entity, transform) in &query {
         if transform.translation.y > window.height() / 2.0 + 50.0 {
             commands.entity(entity).despawn();

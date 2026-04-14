@@ -1,67 +1,55 @@
+pub mod capture;
+
+pub use capture::{Backend, SR};
+
+use std::sync::{atomic::AtomicBool, Arc};
 
 use bevy::prelude::*;
+use crossbeam::channel::{unbounded, Receiver};
 
-use crate::core::Note;
+use capture::start_capture;
 
-mod input;
+pub struct AudioCapturePlugin;
 
-// pub use input::start_audio_input;
-
-pub struct AudioPlugin;
-
-impl Plugin for AudioPlugin {
+impl Plugin for AudioCapturePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .insert_resource(PitchState::default())
-            .add_systems(Startup, start_audio)
-            .add_systems(Update, poll_pitch);
+        app.add_systems(Startup, start_audio_capture);
     }
 }
 
-#[derive(Resource, Default)]
-pub struct PitchState {
-    pub current_hz: Option<f32>,
-}
-
+// TODO: move to a data plugin
 #[derive(Resource)]
-struct PitchReceiver {
-    rx: crossbeam::channel::Receiver<Option<f32>>,
+pub struct AudioConfig {
+    pub device_index: usize,
+    pub backend: Backend,
 }
 
-
-fn start_audio(mut commands: Commands) {
-    let (tx, rx) = crossbeam::channel::bounded(128);
-
-    std::thread::spawn(move || {
-        input::start_audio_input(tx);
-    });
-
-    commands.insert_resource(PitchReceiver { rx });
-}
-
-fn poll_pitch(
-    mut pitch: ResMut<PitchState>,
-    recv: Res<PitchReceiver>,
-) {
-    // while let Ok(freq) = recv.rx.try_recv() {
-    //     pitch.current_hz = freq;
-    // }
-    while let Ok(freq_option) = recv.rx.try_recv() {
-        pitch.current_hz = freq_option;
-        if let Some(freq) = freq_option {
-            println!("[Bevy] freq: {:.2} Hz", freq);
-        } else {
-            println!("[Bevy] freq: None");
+impl Default for AudioConfig {
+    fn default() -> Self {
+        Self {
+            device_index: 0,
+            backend: Backend::PortAudio,
         }
     }
 }
 
 
+#[derive(Resource)]
+pub struct RawBlockReceiver {
+    pub rx: Receiver<Vec<f32>>,
+    pub stop: Arc<AtomicBool>,
+}
 
+pub fn start_audio_capture(mut commands: Commands, config: Option<Res<AudioConfig>>) {
+    let (device_index, backend) = match config {
+        Some(c) => (c.device_index, c.backend),
+        None => (0, Backend::PortAudio),
+    };
 
+    let (tx, rx) = unbounded();
+    let stop = Arc::new(AtomicBool::new(false));
 
+    start_capture(device_index, backend, tx, Arc::clone(&stop));
 
-
-
-
-
+    commands.insert_resource(RawBlockReceiver { rx, stop });
+}

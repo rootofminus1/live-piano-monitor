@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 use rustfft::{FftPlanner, num_complex::Complex};
 
-
+// TODO: move consts and remove unused ones
 
 pub const SR: u32 = 44100;
 pub const TOTAL_SIZE: usize = 4096;
