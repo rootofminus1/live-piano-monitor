@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::{core::{KeyboardSpec, generate_keys}, ui::{KeyboardKind, UiSettings}};
 
 mod layout;
 mod keyboard;
@@ -11,9 +12,35 @@ pub use note_blocks::*;
 pub use highlight::*;
 
 
-use crate::{core::{KeyboardSpec, generate_keys}, ui::{KeyboardKind, UiSettings}};
 
 pub struct DisplayPlugin;
+
+
+// TODO: move this somewhere
+// #[derive(Resource, Default, Clone)]
+// pub struct DetectedNotes {
+//     pub notes: Vec<Pitch>
+// }
+
+// pub fn update_from_yin(
+//     pitch: Res<PitchState>,
+//     mut detected: ResMut<DetectedNotes>,
+// ) {
+//     detected.notes.clear();
+
+//     if let Some(freq) = pitch.current_hz {
+//         if let Some(n) = freq_to_pitch(freq) {
+//             detected.notes.push(n);
+//         }
+//     }
+// }
+
+// pub fn update_from_poly(
+//     poly: Res<PolyphonicState>,
+//     mut detected: ResMut<DetectedNotes>,
+// ) {
+//     detected.notes = poly.notes.clone();
+// }
 
 impl Plugin for DisplayPlugin {
     fn build(&self, app: &mut App) {

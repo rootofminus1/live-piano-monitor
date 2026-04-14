@@ -1,6 +1,8 @@
 
 use bevy::prelude::*;
 
+use crate::core::Note;
+
 mod input;
 
 // pub use input::start_audio_input;
@@ -25,6 +27,7 @@ pub struct PitchState {
 struct PitchReceiver {
     rx: crossbeam::channel::Receiver<Option<f32>>,
 }
+
 
 fn start_audio(mut commands: Commands) {
     let (tx, rx) = crossbeam::channel::bounded(128);

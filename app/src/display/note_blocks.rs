@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use crate::audio::PitchState;
-use crate::core::{freq_to_note, Note};
-use crate::display::{PianoLayout, KeyPitch};
+use crate::alg::PolyphonicState;
+use crate::core::{Note, Pitch};
+use crate::display::{KeyPitch, PianoLayout};
 use crate::ui::UiSettings;
 
 #[derive(Component)]
@@ -12,48 +12,44 @@ pub struct NoteBlock {
 }
 
 
-// TODO: rewrite to include:
-// - handling multi-pitch state
-// - instead of spawning many short note pieces, spawn one big note for sustained cases (when the pitch deosnt change)
 pub fn spawn_note_block(
-    pitch: Res<PitchState>,
+    detected: Res<PolyphonicState>,
     layout: Res<PianoLayout>,
     keys: Query<(&KeyPitch, &Transform, &Sprite)>,
     mut commands: Commands,
 ) {
-    let Some(freq) = pitch.current_hz else { return };
-    let Some((note, octave)) = freq_to_note(freq) else { return };
+    for pitch in &detected.notes {
+        let Pitch { note, octave } = pitch;
 
-    let Some((_, transform, sprite)) = keys
-        .iter()
-        .find(|(k, _, _)| k.note == note && k.octave == octave)
-    else { return };
+        let Some((_, transform, sprite)) = keys
+            .iter()
+            .find(|(k, _, _)| k.note == *note && k.octave == *octave)
+        else { continue };
 
-    let key_x = transform.translation.x;
+        let key_x = transform.translation.x;
 
-    let key_width = sprite
-        .custom_size
-        .map(|v| v.x)
-        .unwrap_or(layout.white_key_width);
+        let key_width = sprite
+            .custom_size
+            .map(|v| v.x)
+            .unwrap_or(layout.white_key_width);
 
-    let note_height = 20.0;
-    let start_y = layout.bottom_y + layout.white_key_height;
-    // let start_y = layout.bottom_y + layout.white_key_height + note_height / 2.0;
-    // TODO: fix the thing above, its not as accurate as it should be
+        let note_height = 20.0;
+        let start_y = layout.bottom_y + layout.white_key_height;
 
-    commands.spawn((
-        Sprite {
-            color: Color::srgb(0.3, 0.7, 1.0),
-            custom_size: Some(Vec2::new(key_width, note_height)),
-            ..default()
-        },
-        Transform::from_xyz(key_x, start_y, 0.5),
-        NoteBlock {
-            note,
-            octave,
-            velocity: 1.0
-        }
-    ));
+        commands.spawn((
+            Sprite {
+                color: Color::srgb(0.3, 0.7, 1.0),
+                custom_size: Some(Vec2::new(key_width, note_height)),
+                ..default()
+            },
+            Transform::from_xyz(key_x, start_y, 0.5),
+            NoteBlock {
+                note: *note,
+                octave: *octave,
+                velocity: 1.0
+            }
+        ));
+    }
 }
 
 
