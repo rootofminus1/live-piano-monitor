@@ -1,0 +1,9 @@
+{
+  "note_speed": 100.0,
+  "keyboard_kind": "Piano88",
+  "device_name": "SonivoxEAS",
+  "detection_mode": "Polyphonic",
+  "models": [],
+  "active_model_index": null,
+  "models_dir": null
+}

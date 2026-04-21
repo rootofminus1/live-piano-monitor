@@ -1,0 +1,12 @@
+[package]
+name = "alg"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+yin = "0.2.0"
+rustfft = "6"
+bincode = "1"
+portaudio = "0.8.0"
+core = { path = "../core" }
+serde =  { workspace = true }
