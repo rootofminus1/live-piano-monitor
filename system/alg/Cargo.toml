@@ -10,3 +10,7 @@ bincode = "1"
 portaudio = "0.8.0"
 core = { path = "../core" }
 serde =  { workspace = true }
+
+sklears-linear = "0.1"
+sklears-core = "0.1"
+ndarray = "0.17.2" 

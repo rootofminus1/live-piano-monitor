@@ -4,14 +4,14 @@ use rustfft::{FftPlanner, num_complex::Complex};
 // TODO: move consts and remove unused ones
 
 pub const SR: u32 = 44100;
-pub const TOTAL_SIZE: usize = 4096;
+pub const TOTAL_SIZE: usize = 4096;  // TUNABLE (liveliness vs accuracy)
 pub const CROP_SIZE: usize = 256;
 pub const NONZERO_COEFS: usize = 6;
 pub const ONSET_THRESHOLD_DB: f32 = -30.0;
-pub const OFFSET_THRESHOLD_DB: f32 = -40.0;
+pub const OFFSET_THRESHOLD_DB: f32 = -35.0;  // TUNABLE (offset recognition)
 
-// 1024 at 44100 below matches python, might also be tunable 
-pub const FFT_ACCUMULATE_BLOCKS: usize = 10;
+// value 10 means 1024 at 44100 below matches python, might also be tunable 
+pub const FFT_ACCUMULATE_BLOCKS: usize = 4;  // TUNABLE (liveliness vs accuracy)
 
 // might be changeable for better results - to be tested
 pub const DEFAULT_BLOCK_SIZE: u32 = 1024;

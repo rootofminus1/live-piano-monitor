@@ -1,15 +1,19 @@
 use core::{KeyboardSpec, Note, Tone, generate_keys};
 
-use crate::{PitchProcessor, data::{TrainingData, data_to_dict_matrix}, dsp::{FFT_ACCUMULATE_BLOCKS, OFFSET_THRESHOLD_DB, ONSET_THRESHOLD_DB, TOTAL_SIZE, compute_fft, rms_db}, sparse::sparse_encode};
+use crate::{PitchProcessor, data::{TrainingData, data_to_dict_matrix}, dsp::{FFT_ACCUMULATE_BLOCKS, NONZERO_COEFS, OFFSET_THRESHOLD_DB, ONSET_THRESHOLD_DB, TOTAL_SIZE, compute_fft, rms_db}};
+
+use ndarray::{Array1, Array2};
+use sklears_linear::Lars;
+use sklears_core::traits::Fit;
 
 
-
-const COEFFICIENT_THRESHOLD: f32 = 0.10;
+const COEFFICIENT_THRESHOLD: f64 = 0.10;
 const MIN_SEMITONE_DISTANCE: i32 = 2;
 
 
 pub struct LarsProcessor {
-    dict: Vec<Vec<f32>>,
+    // (CROP_SIZE, n_atoms)
+    dict: Array2<f64>,
     note_map: Vec<Tone>,
 
     note_on: bool,
@@ -22,12 +26,15 @@ impl LarsProcessor {
     pub fn new() -> Self {
         let td = TrainingData::load("fretdata.bin".as_ref())
             .expect("failed to load training data");
-        let dict = data_to_dict_matrix(&td.notes);
 
+        let dict_f32 = data_to_dict_matrix(&td.notes); // (CROP_SIZE, n_atoms)
+        let dict = dict_f32.mapv(|x| x as f64);
+
+        let n_atoms = dict.ncols();
         let keys = generate_keys(&KeyboardSpec {
             start_note: Note::C,
             start_octave: 3,
-            key_count: dict.len(),
+            key_count: n_atoms,
         });
         let note_map = keys.into_iter().map(|k| Tone::new(k.note, k.octave)).collect();
 
@@ -42,13 +49,28 @@ impl LarsProcessor {
     }
 
     fn detect(&self, fft: Vec<f32>) -> Vec<Tone> {
-        let s = sparse_encode(&fft, &self.dict, 6);
+        let x: Array1<f64> = Array1::from_iter(fft.iter().map(|&v| v as f64));
+ 
+        let model = Lars::new()
+            .n_nonzero_coefs(NONZERO_COEFS)
+            .fit(&self.dict, &x)
+            .expect("LARS fit failed");
+ 
+        let mut indexed: Vec<(usize, f64)> = model
+            .coef()
+            .iter()
+            .cloned()
+            .enumerate()
+            .collect();
+ 
+        indexed.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        indexed.truncate(NONZERO_COEFS);
+ 
+        let total: f64 = indexed.iter()
+            .filter(|(_, c)| *c > 0.0)
+            .map(|(_, c)| c)
+            .sum();
 
-        let mut indexed: Vec<(usize, f32)> = s.into_iter().enumerate().collect();
-        indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        indexed.truncate(6);
-
-        let total: f32 = indexed.iter().filter(|(_, c)| *c > 0.0).map(|(_, c)| c).sum();
         if total <= 0.0 {
             return vec![];
         }
@@ -64,11 +86,11 @@ impl LarsProcessor {
 
             let Some(pitch) = self.note_map.get(*i) else { continue };
 
-            // Rough MIDI number for distance check: octave * 12 + note_index
             let note_idx = Note::all_notes()
                 .iter()
                 .position(|&n| n == pitch.note)
                 .unwrap_or(0) as i32;
+
             let midi = pitch.octave * 12 + note_idx;
 
             if kept_midi.iter().any(|&m| (midi - m).abs() < MIN_SEMITONE_DISTANCE) {
@@ -94,7 +116,7 @@ impl PitchProcessor for LarsProcessor {
             self.block_count = 0;
         } else if self.note_on && db < OFFSET_THRESHOLD_DB {
             self.note_on = false;
-            return Some(vec![]);  // silence
+            return Some(vec![]);
         }
 
         if !self.note_on {
