@@ -13,8 +13,9 @@ pub struct YinProcessor {
 
 impl YinProcessor {
     pub fn new(buffer_size: usize) -> Self {
+        let sr = 48000; // Sr as usize;
         Self {
-            yin: Yin::init(0.15, 50.0, 1000.0, SR as usize),
+            yin: Yin::init(0.15, 50.0, 1000.0, sr),
             buffer: Vec::with_capacity(buffer_size),
             buffer_size,
         }

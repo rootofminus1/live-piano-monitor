@@ -1,5 +1,5 @@
 use alg::processor::DetectionMode;
-use core::{KeyboardSpec, Note};
+use core::{KeyboardSpec, Note, Tone};
 use serde::{Deserialize, Serialize};
 
 pub const SETTINGS_PATH: &str = "settings.json";
@@ -27,8 +27,7 @@ impl ModelInfo {
 
     pub fn to_keyboard_spec(&self) -> KeyboardSpec {
         KeyboardSpec {
-            start_note: self.start_note,
-            start_octave: self.start_octave,
+            start_tone: Tone { note: self.start_note, octave: self.start_octave },
             key_count: self.key_count,
         }
     }

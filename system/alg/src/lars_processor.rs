@@ -32,8 +32,7 @@ impl LarsProcessor {
 
         let n_atoms = dict.ncols();
         let keys = generate_keys(&KeyboardSpec {
-            start_note: Note::C,
-            start_octave: 3,
+            start_tone: Tone { note: Note::C, octave: 3 },
             key_count: n_atoms,
         });
         let note_map = keys.into_iter().map(|k| Tone::new(k.note, k.octave)).collect();

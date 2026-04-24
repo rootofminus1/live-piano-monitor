@@ -1,5 +1,6 @@
+use core::Tone;
+
 use bevy::prelude::*;
-use core::KeyInfo;
 
 
 const WHITE_KEY_HEIGHT_RATIO: f32 = 0.35;
@@ -18,7 +19,7 @@ pub struct PianoLayout {
 }
 
 
-pub fn calculate_layout(window: &Window, keys: &[KeyInfo]) -> PianoLayout {
+pub fn calculate_layout(window: &Window, keys: &[Tone]) -> PianoLayout {
     let white_key_count = keys.iter().filter(|k| k.note.is_white()).count();
     let usable_width = window.width();
 

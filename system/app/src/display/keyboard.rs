@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use core::{KeyInfo, Note};
+use core::{Tone, Note};
 use crate::display::PianoLayout;
 
 
@@ -24,7 +24,7 @@ pub struct PianoKeyEntity;
 
 pub fn spawn_keyboard(
     commands: &mut Commands,
-    keys: &[KeyInfo],
+    keys: &[Tone],
     layout: &PianoLayout,
 ) {
     let mut next_white_x = layout.start_x;
