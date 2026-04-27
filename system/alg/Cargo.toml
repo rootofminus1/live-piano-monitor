@@ -14,3 +14,10 @@ serde =  { workspace = true }
 sklears-linear = "0.1"
 sklears-core = "0.1"
 ndarray = "0.17.2" 
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "detection"
+harness = false
