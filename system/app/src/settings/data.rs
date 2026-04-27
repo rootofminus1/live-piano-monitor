@@ -14,20 +14,18 @@ pub enum KeyboardKind {
 pub struct ModelInfo {
     pub name: String,
     pub filename: String,
-    pub start_note: Note,
-    pub start_octave: i32,
+    pub start_tone: Tone,
     pub key_count: usize,
 }
 
 impl ModelInfo {
     pub fn summary(&self) -> String {
-        format!("{} ({} notes from {}{})",
-            self.name, self.key_count, self.start_note, self.start_octave)
+        format!("{} ({} notes from {})", self.name, self.key_count, self.start_tone)
     }
 
     pub fn to_keyboard_spec(&self) -> KeyboardSpec {
         KeyboardSpec {
-            start_tone: Tone { note: self.start_note, octave: self.start_octave },
+            start_tone: self.start_tone,
             key_count: self.key_count,
         }
     }

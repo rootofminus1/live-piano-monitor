@@ -1,5 +1,5 @@
 use crate::Note;
-
+use std::fmt;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -24,5 +24,11 @@ impl Tone {
 
         // Some((Tone::all_notes()[note_index as usize], octave))
         Some(Tone::new(Note::all_notes()[note_index as usize], octave))
+    }
+}
+
+impl fmt::Display for Tone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.note, self.octave)
     }
 }
