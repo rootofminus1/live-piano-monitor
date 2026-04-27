@@ -1,9 +1,55 @@
 {
   "note_speed": 100.0,
   "keyboard_kind": "Piano88",
-  "device_name": "SonivoxEAS",
+  "device_name": "Alder Lake PCH-P High Definition Audio Controller Digital Microphone",
   "detection_mode": "Polyphonic",
-  "models": [],
-  "active_model_index": null,
-  "models_dir": null
+  "models": [
+    {
+      "name": "small piano",
+      "filename": "61.bin",
+      "start_tone": {
+        "note": "C",
+        "octave": 2
+      },
+      "key_count": 61
+    },
+    {
+      "name": "C to E demo",
+      "filename": "ce.bin",
+      "start_tone": {
+        "note": "C",
+        "octave": 3
+      },
+      "key_count": 5
+    },
+    {
+      "name": "F to A",
+      "filename": "fa.bin",
+      "start_tone": {
+        "note": "F",
+        "octave": 3
+      },
+      "key_count": 5
+    },
+    {
+      "name": "physical C4",
+      "filename": "c4phys.bin",
+      "start_tone": {
+        "note": "C",
+        "octave": 4
+      },
+      "key_count": 13
+    },
+    {
+      "name": "phone",
+      "filename": "phone.bin",
+      "start_tone": {
+        "note": "C",
+        "octave": 4
+      },
+      "key_count": 25
+    }
+  ],
+  "active_model_index": 0,
+  "models_dir": "/home/the/repos/live-piano-monitor/system/.models"
 }
