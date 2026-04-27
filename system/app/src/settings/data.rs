@@ -1,6 +1,7 @@
 use alg::processor::DetectionMode;
-use core::{KeyboardSpec, Note, Tone};
+use core::{ModelInfo};
 use serde::{Deserialize, Serialize};
+use bevy::prelude::info;
 
 pub const SETTINGS_PATH: &str = "settings.json";
 
@@ -8,27 +9,6 @@ pub const SETTINGS_PATH: &str = "settings.json";
 pub enum KeyboardKind {
     Piano88,
     PianoSmall,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelInfo {
-    pub name: String,
-    pub filename: String,
-    pub start_tone: Tone,
-    pub key_count: usize,
-}
-
-impl ModelInfo {
-    pub fn summary(&self) -> String {
-        format!("{} ({} notes from {})", self.name, self.key_count, self.start_tone)
-    }
-
-    pub fn to_keyboard_spec(&self) -> KeyboardSpec {
-        KeyboardSpec {
-            start_tone: self.start_tone,
-            key_count: self.key_count,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bevy::prelude::Resource)]
@@ -72,11 +52,14 @@ impl AppSettings {
 
     pub fn resolved_models_dir(&self) -> std::path::PathBuf {
         if let Some(dir) = &self.models_dir {
+            info!("using self {}", dir);
             return std::path::PathBuf::from(dir);
         }
         if let Ok(dir) = std::env::var("PIANO_MODELS_DIR") {
+            info!("using env {}", dir);
             return std::path::PathBuf::from(dir);
         }
-        std::path::PathBuf::from("models")
+        info!("using fallback");
+        std::path::PathBuf::from(".models")
     }
 }

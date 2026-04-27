@@ -35,7 +35,7 @@ pub fn calculate_layout(window: &Window, keys: &[Tone]) -> PianoLayout {
         white_key_count as f32 * white_key_width +
         (white_key_count as f32 - 1.0) * KEY_GAP;
 
-    let start_x = -window.width() / 2.0 + (window.width() - total_width) / 2.0;
+    let start_x = -window.width() / 2.0 + (window.width() - total_width) / 2.0 + white_key_width / 2.0;
     let bottom_y = -window.height() / 2.0;
 
     PianoLayout {

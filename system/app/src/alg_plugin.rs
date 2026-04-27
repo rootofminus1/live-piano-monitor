@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use crossbeam::channel::{unbounded, Receiver};
 use alg::{processor::DetectionMode, PitchProcessor, lars_processor::LarsProcessor, yin_processor::YinProcessor};
-use core::Tone;
+use core::{ModelInfo, Tone};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use crate::audio::{RawBlockReceiver, start_audio_capture};
 use crate::settings::data::AppSettings;
 
@@ -12,7 +14,11 @@ impl Plugin for DetectionPlugin {
         app
             .init_resource::<DetectedPitches>()
             .add_systems(Startup, start_detection_thread.after(start_audio_capture))
-            .add_systems(Update, (restart_detection_on_device_change, receive_pitches));
+            .add_systems(Update, (
+                restart_detection_on_device_change, 
+                restart_detection_on_settings_change,
+                receive_pitches
+            ));
     }
 }
 
@@ -24,53 +30,40 @@ pub struct DetectedPitches {
 #[derive(Resource)]
 struct DetectionReceiver {
     rx: Receiver<Vec<Tone>>,
+    stop: Arc<AtomicBool>,
 }
 
 fn spawn_detection_thread(
-    block_rx: crossbeam::channel::Receiver<Vec<f32>>, 
+    block_rx: crossbeam::channel::Receiver<Vec<f32>>,
     mode: DetectionMode,
-    model_path: std::path::PathBuf,
+    model_info: Option<(ModelInfo, std::path::PathBuf)>, // (info, models_dir)
+    stop: Arc<AtomicBool>, 
 ) -> Receiver<Vec<Tone>> {
     let (tx, rx) = unbounded::<Vec<Tone>>();
 
     std::thread::spawn(move || {
-        info!("Detection thread starting, mode: {:?}", mode);
-        
         let mut processor: Box<dyn PitchProcessor> = match mode {
             DetectionMode::Polyphonic => {
-                info!("Loading LARS model from {:?}", model_path);
-                match std::panic::catch_unwind(|| LarsProcessor::new()) {
-                    Ok(p) => {
-                        info!("LARS model loaded successfully");
-                        Box::new(p)
-                    }
+                let Some((info, models_dir)) = model_info else {
+                    error!("Polyphonic mode selected but no model configured");
+                    return;
+                };
+                match std::panic::catch_unwind(|| LarsProcessor::new(&info, &models_dir)) {
+                    Ok(p) => Box::new(p),
                     Err(e) => {
                         error!("Failed to load LARS model: {:?}", e);
                         return;
                     }
                 }
             }
-            DetectionMode::Monophonic => {
-                info!("Using YIN processor");
-                Box::new(YinProcessor::default())
-            }
+            DetectionMode::Monophonic => Box::new(YinProcessor::default()),
         };
 
-        info!("Detection thread running, waiting for blocks");
-        let mut block_count = 0u64;
         loop {
-            let Ok(block) = block_rx.recv() else { 
-                info!("Detection thread: block channel closed, exiting");
-                break 
-            };
-            block_count += 1;
-            if block_count % 100 == 0 {
-                info!("Detection thread: processed {} blocks", block_count);
-            }
+            if stop.load(Ordering::Relaxed) { break; }
+            
+            let Ok(block) = block_rx.recv() else { break };
             if let Some(pitches) = processor.process_block(&block) {
-                if !pitches.is_empty() {
-                    info!("Detected pitches: {:?}", pitches);
-                }
                 let _ = tx.send(pitches);
             }
         }
@@ -78,44 +71,111 @@ fn spawn_detection_thread(
 
     rx
 }
+
+fn active_model(settings: &AppSettings) -> Option<(ModelInfo, std::path::PathBuf)> {
+    settings.active_model_index
+        .and_then(|i| settings.models.get(i))
+        .map(|m| (m.clone(), settings.resolved_models_dir()))
+}
+
+
+#[derive(PartialEq, Clone)]
+struct DetectionKey {
+    mode: DetectionMode,
+    model_index: Option<usize>,
+}
+
 fn start_detection_thread(
     mut commands: Commands,
     raw: Res<RawBlockReceiver>,
     settings: Res<AppSettings>,
 ) {
-    let rx = spawn_detection_thread(raw.rx.clone(), settings.detection_mode, "fretdata.bin".into());
-    commands.insert_resource(DetectionReceiver { rx });
+    let stop = Arc::new(AtomicBool::new(false));
+    let rx = spawn_detection_thread(
+        raw.rx.clone(),
+        settings.detection_mode,
+        active_model(&settings),
+        Arc::clone(&stop),
+    );
+    commands.insert_resource(DetectionReceiver { rx, stop });
 }
+
+// Restart when the portaudio device changes (RawBlockReceiver is replaced)
 fn restart_detection_on_device_change(
     mut commands: Commands,
     raw: Res<RawBlockReceiver>,
     settings: Res<AppSettings>,
-    mut current_name: Local<Option<Option<String>>>,
+    mut initialized: Local<bool>,
     mut detected: ResMut<DetectedPitches>,
+    receiver: Option<Res<DetectionReceiver>>,
 ) {
-    // First frame: just record state
-    if current_name.is_none() {
-        *current_name = Some(settings.device_name.clone());
+    if !*initialized {
+        *initialized = true;
         return;
     }
-
-    if current_name.as_ref().unwrap() == &settings.device_name {
-        return;
-    }
-
-    // only restart if the resource actually changed (like when an audio restart happened previously)
+    
     if !raw.is_changed() {
         return;
     }
 
-    info!("device changed and new RawBlockReceiver is ready, restarting detection thread");
+    if let Some(r) = receiver { r.stop.store(true, Ordering::Relaxed); }
 
-    *current_name = Some(settings.device_name.clone());
+    info!("RawBlockReceiver changed, restarting detection thread");
     detected.notes.clear();
 
-    let rx = spawn_detection_thread(raw.rx.clone(), settings.detection_mode, "fretdata.bin".into());
-    commands.insert_resource(DetectionReceiver { rx });
+    let stop = Arc::new(AtomicBool::new(false));
+
+    let rx = spawn_detection_thread(
+        raw.rx.clone(),
+        settings.detection_mode,
+        active_model(&settings),
+        Arc::clone(&stop)
+    );
+    commands.insert_resource(DetectionReceiver { rx, stop });
 }
+
+// Restart when detection settings change (mode or model), independent of audio
+fn restart_detection_on_settings_change(
+    mut commands: Commands,
+    raw: Res<RawBlockReceiver>,
+    settings: Res<AppSettings>,
+    mut last_key: Local<Option<DetectionKey>>,
+    mut detected: ResMut<DetectedPitches>,
+    receiver: Option<Res<DetectionReceiver>>,
+) {
+    let key = DetectionKey {
+        mode: settings.detection_mode,
+        model_index: settings.active_model_index,
+    };
+
+    if last_key.as_ref() == Some(&key) {
+        return;
+    }
+    
+    // Skip the very first frame (just initialize)
+    if last_key.is_none() {
+        *last_key = Some(key);
+        return;
+    }
+
+    *last_key = Some(key);
+
+    if let Some(r) = receiver { r.stop.store(true, Ordering::Relaxed); }
+
+    info!("Detection settings changed, restarting detection thread");
+    detected.notes.clear();
+
+    let stop = Arc::new(AtomicBool::new(false));
+
+    let rx = spawn_detection_thread(
+        raw.rx.clone(),
+        settings.detection_mode,
+        active_model(&settings),
+        Arc::clone(&stop)
+    );
+    commands.insert_resource(DetectionReceiver { rx, stop });
+}
+
 
 fn receive_pitches(receiver: Res<DetectionReceiver>, mut state: ResMut<DetectedPitches>) {
     let mut last = None;
