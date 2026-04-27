@@ -5,9 +5,22 @@ from matplotlib.animation import FuncAnimation
 import librosa
 import soundfile as sf
 
-DEVICE_ID = 1
-samplerate = 44100
-blocksize = 2048
+
+import matplotlib
+matplotlib.use("Qt5Agg")
+print(matplotlib.get_backend())
+
+DEVICE_ID = 16
+
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+RATE = int(dev["default_samplerate"])
+samplerate = RATE # 44100
+blocksize = 1048
+
+# DEVICE_ID = 1
+# samplerate = 44100
+# blocksize = 2048
 
 n_bins = 88  # 88 because 88 piano keys
 fmin = 27.5  # lowest piano key freq (damnit low freqs are quite a pain)
@@ -39,16 +52,16 @@ def audio_callback(indata, frames, time, status):
     audio_buffer = indata[:, 0].copy()
 
 
-fig, (ax_wave, ax_cqt, ax_dot) = plt.subplots(3, 1, figsize=(12, 12))
+fig, (ax_cqt, ax_dot) = plt.subplots(2, 1, figsize=(8, 12))
 
 x = np.arange(0, blocksize) / samplerate
-line_wave, = ax_wave.plot(x, np.zeros(blocksize), color='blue')
-ax_wave.set_ylim(-1, 1)
-ax_wave.set_xlim(0, blocksize / samplerate)
-ax_wave.set_title("live waveform")
-ax_wave.set_xlabel("time (s)")
-ax_wave.set_ylabel("amplitude")
-ax_wave.grid(True, alpha=0.3)
+# line_wave, = ax_wave.plot(x, np.zeros(blocksize), color='blue')
+# ax_wave.set_ylim(-1, 1)
+# ax_wave.set_xlim(0, blocksize / samplerate)
+# ax_wave.set_title("live waveform")
+# ax_wave.set_xlabel("time (s)")
+# ax_wave.set_ylabel("amplitude")
+# ax_wave.grid(True, alpha=0.3)
 
 cqt_freqs = librosa.cqt_frequencies(n_bins=n_bins, fmin=27.5)
 line_live_cqt, = ax_cqt.semilogx(cqt_freqs, np.zeros(n_bins), color='orange', label='live', linewidth=1.5)
@@ -74,7 +87,7 @@ def update_plot(frame):
     global audio_buffer, dot_history
 
     # for the waveform
-    line_wave.set_ydata(audio_buffer)
+    # line_wave.set_ydata(audio_buffer)
 
     # for the CQT
     live_cqt = librosa.cqt(
@@ -97,7 +110,7 @@ def update_plot(frame):
     dot_history[-1] = score
     line_dot.set_data(np.arange(len(dot_history)), dot_history)
 
-    return line_wave, line_live_cqt, line_tpl_cqt, line_dot
+    return line_live_cqt, line_tpl_cqt, line_dot
 
 
 

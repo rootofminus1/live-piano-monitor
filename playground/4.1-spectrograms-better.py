@@ -3,10 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import librosa
-import matplotlib
-matplotlib.use("TkAgg")
 
-DEVICE_ID = 15
+import matplotlib
+matplotlib.use("Qt5Agg")
+print(matplotlib.get_backend())
+
+DEVICE_ID = 12
 
 dev = sd.query_devices(DEVICE_ID)
 assert isinstance(dev, dict)

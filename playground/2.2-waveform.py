@@ -8,7 +8,7 @@ matplotlib.use("TkAgg")
 
 print(matplotlib.get_backend())
 
-DEVICE_ID = 15
+DEVICE_ID = 13
 dev = sd.query_devices(DEVICE_ID)
 assert isinstance(dev, dict)
 RATE = int(dev["default_samplerate"])

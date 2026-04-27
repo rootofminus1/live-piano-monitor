@@ -3,8 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-DEVICE_ID = 1
-samplerate = 44100
+import matplotlib
+matplotlib.use("Qt5Agg")
+print(matplotlib.get_backend())
+
+
+DEVICE_ID = 16
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+samplerate = int(dev["default_samplerate"])
+# samplerate = 44100
 blocksize = 1024
 
 # spectrum_buffer = np.zeros(blocksize)
@@ -31,3 +39,12 @@ stream = sd.InputStream(device=DEVICE_ID, callback=audio_callback, blocksize=blo
 with stream:
     ani = FuncAnimation(fig, update_plot, interval=30, blit=True)
     plt.show()
+
+
+
+
+
+
+
+
+

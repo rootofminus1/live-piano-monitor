@@ -4,9 +4,21 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import librosa
 
-DEVICE_ID = 1
-samplerate = 44100
+import matplotlib
+matplotlib.use("Qt5Agg")
+print(matplotlib.get_backend())
+
+DEVICE_ID = 16
+
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+RATE = int(dev["default_samplerate"])
+samplerate = RATE # 44100
 blocksize = 2048
+
+# DEVICE_ID = 1
+# samplerate = 44100
+# blocksize = 2048
 
 audio_buffer = np.zeros(blocksize)
 pitch_history_pyin = []

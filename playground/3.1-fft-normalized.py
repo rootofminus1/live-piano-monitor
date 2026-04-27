@@ -7,6 +7,8 @@ DEVICE_ID = 1
 samplerate = 44100
 blocksize = 2048
 
+
+
 fig, ax = plt.subplots()
 x = np.fft.rfftfreq(blocksize, 1 / samplerate)
 line, = ax.semilogx(x, np.zeros_like(x))

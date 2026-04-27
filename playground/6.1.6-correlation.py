@@ -5,9 +5,23 @@ from matplotlib.animation import FuncAnimation
 from scipy import signal
 import soundfile as sf
 
-DEVICE_ID = 1
-samplerate = 44100
-blocksize = 1024
+
+
+import matplotlib
+matplotlib.use("Qt5Agg")
+print(matplotlib.get_backend())
+
+DEVICE_ID = 16
+
+dev = sd.query_devices(DEVICE_ID)
+assert isinstance(dev, dict)
+RATE = int(dev["default_samplerate"])
+samplerate = RATE # 44100
+blocksize = 2048
+
+# DEVICE_ID = 16
+# samplerate = 44100
+# blocksize = 1024
 
 reference_audio, sr_ref = sf.read("frame_751.wav")
 
