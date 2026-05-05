@@ -1,7 +1,7 @@
 {
   "note_speed": 100.0,
   "keyboard_kind": "Piano88",
-  "device_name": "Alder Lake PCH-P High Definition Audio Controller Digital Microphone",
+  "device_name": "SonivoxEAS",
   "detection_mode": "Polyphonic",
   "models": [
     {

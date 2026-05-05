@@ -1,0 +1,10 @@
+
+app:
+    cargo run --bin app
+
+
+collect:
+    cargo run --bin collector -- --device 15 --model 3
+
+track:
+    cargo run --bin tracker -- --device 15 --model 3

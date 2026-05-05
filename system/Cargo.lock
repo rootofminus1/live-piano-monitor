@@ -2117,6 +2117,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "collector"
+version = "0.1.0"
+dependencies = [
+ "alg",
+ "core",
+ "crossbeam",
+ "portaudio",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "combine"
 version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6389,6 +6401,19 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "tracker"
+version = "0.1.0"
+dependencies = [
+ "alg",
+ "core",
+ "crossbeam",
+ "ctrlc",
+ "portaudio",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,0 +1,16 @@
+[package]
+name = "collector"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "collector"
+path = "src/main.rs"
+
+[dependencies]
+core = { path = "../../core" }
+alg = { path = "../../alg" }
+portaudio = "0.8.0"
+crossbeam = "0.8.4"
+serde = { workspace = true }
+serde_json = { workspace = true }

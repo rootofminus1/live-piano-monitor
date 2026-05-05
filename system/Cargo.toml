@@ -3,6 +3,8 @@ members = [
     "core",
     "alg",
     "app",
+    "proto/collector",
+    "proto/tracker"
 ]
 resolver = "2"
 

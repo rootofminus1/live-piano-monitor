@@ -2,7 +2,7 @@ use core::Tone;
 
 use yin::Yin;
 
-use crate::{PitchProcessor, dsp::SR};
+use crate::{PitchProcessor};
 
 
 pub struct YinProcessor {
