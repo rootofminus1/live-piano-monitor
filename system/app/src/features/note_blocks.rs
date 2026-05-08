@@ -1,26 +1,26 @@
-use core::{Note, Tone};
-
 use bevy::prelude::*;
 
-use crate::{alg_plugin::DetectedPitches, display::{KeyPitch, PianoLayout}, settings::data::AppSettings};
+use crate::features::keyboard::KeyTone;
+use crate::features::pipeline::DetectedPitches;
+use crate::features::{
+    layout::PianoLayout,
+};
+use crate::settings::data::AppSettings;
+
 
 #[derive(Component)]
-pub struct NoteBlock {
-    pub note: Note,
-    pub octave: i32,
-    pub velocity: f32,
-}
+pub struct NoteBlock;
 
-pub fn spawn_note_block(
+pub fn spawn_note_blocks(
     detected: Res<DetectedPitches>,
     layout: Res<PianoLayout>,
-    keys: Query<(&KeyPitch, &Transform, &Sprite)>,
+    keys: Query<(&KeyTone, &Transform, &Sprite)>, // TODO: is this rly a good way to query? why not marker components?
     mut commands: Commands,
 ) {
-    for Tone { note, octave } in &detected.notes {
+    for tone in &detected.notes {
         let Some((_, transform, sprite)) = keys
             .iter()
-            .find(|(k, _, _)| k.note == *note && k.octave == *octave)
+            .find(|(k, _, _)| k.0 == *tone)
         else {
             continue;
         };
@@ -37,7 +37,7 @@ pub fn spawn_note_block(
                 ..default()
             },
             Transform::from_xyz(key_x, start_y, 0.5),
-            NoteBlock { note: *note, octave: *octave, velocity: 1.0 },
+            NoteBlock
         ));
     }
 }
@@ -52,7 +52,7 @@ pub fn move_note_blocks(
     }
 }
 
-pub fn despawn_offscreen_notes(
+pub fn despawn_offscreen_note_blocks(
     windows: Query<&Window>,
     mut commands: Commands,
     query: Query<(Entity, &Transform), With<NoteBlock>>,

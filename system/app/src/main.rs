@@ -1,33 +1,31 @@
-mod testing;
-
-use alg::DetectionMode;
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::EguiPlugin;
 
-mod audio;
-mod display;
-mod ui;
-mod alg_plugin;
+use crate::{features::{keyboard::KeyboardPlugin, pipeline::PipelinePlugin}, screens::ScreensPlugin, settings::plugin::SettingsPlugin, state::AppState, ui::UiPlugin};
+
+mod state;
+mod testing;
+mod screens;
+mod features;
 mod settings;
-
-use display::DisplayPlugin;
-use ui::UiPlugin;
-
-use crate::{alg_plugin::DetectionPlugin, audio::AudioCapturePlugin, settings::plugin::SettingsPlugin};
+mod ui;
 
 fn main() {
-
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin::default()))
         .add_plugins(EguiPlugin::default())
-        
+        .init_state::<AppState>()
         .add_plugins(SettingsPlugin)
-        .add_plugins(AudioCapturePlugin)
-        .add_plugins(DetectionPlugin) 
-        .add_plugins(DisplayPlugin)
+        // lifecycle for features live HERE... should they tho?
+        .add_plugins(PipelinePlugin)
+        .add_plugins(KeyboardPlugin)
         .add_plugins(UiPlugin)
+        .add_plugins(ScreensPlugin)
+        .add_systems(Startup, setup_camera)
         .run();
 }
 
 
-
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2d);
+}

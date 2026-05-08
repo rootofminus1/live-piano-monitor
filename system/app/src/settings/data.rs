@@ -1,7 +1,7 @@
 use alg::processor::DetectionMode;
-use core::{ModelInfo};
+use bevy::prelude::*;
+use core::ModelInfo;
 use serde::{Deserialize, Serialize};
-use bevy::prelude::info;
 
 pub const SETTINGS_PATH: &str = "settings.json";
 
@@ -11,11 +11,11 @@ pub enum KeyboardKind {
     PianoSmall,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, bevy::prelude::Resource)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Resource)]
 pub struct AppSettings {
     pub note_speed: f32,
     pub keyboard_kind: KeyboardKind,
-    pub device_name: Option<String>, 
+    pub device_name: Option<String>,
     pub detection_mode: DetectionMode,
     pub models: Vec<ModelInfo>,
     pub active_model_index: Option<usize>,
@@ -31,7 +31,7 @@ impl Default for AppSettings {
             detection_mode: DetectionMode::Polyphonic,
             models: vec![],
             active_model_index: None,
-            models_dir: None
+            models_dir: None,
         }
     }
 }

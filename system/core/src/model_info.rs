@@ -2,7 +2,7 @@ use crate::{KeyboardSpec, Tone};
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ModelInfo {
     pub name: String,
     pub filename: String,
